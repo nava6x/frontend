@@ -1,0 +1,34 @@
+.App{
+    font-family: "mononoki";
+}
+.chat{
+    margin-bottom: 10px;
+    width: 100%;
+    height: 60vh;
+    overflow: auto;
+    display: flex;
+    gap: 5px;
+    flex-direction: column;
+}
+.my-message{
+    background: rgb(62, 62, 62);
+    color: white;
+    align-self:flex-end;
+    padding: 10px 15px;
+    border-radius: 10px;
+}
+
+.other-message{
+    background: rgb(24, 24, 24);
+    color: white;
+    align-self:flex-start;
+    padding: 10px 15px;
+    border-radius: 10px;
+}
+
+.mytype{
+    display: none;
+}
+.othertype{
+    display: block;
+}
