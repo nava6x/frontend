@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import io from 'socket.io-client';
 import Cookies from 'js-cookie';
-import './css/Chatpage.css'
+import './css/Chatpage.css';
 
 let username;
 username = Cookies.get('lcid');
@@ -11,92 +11,88 @@ const socket = io('https://testprosses.onrender.com');
 function ChatPage() {
   const [message, setMessage] = useState('');
   const [chat, setChat] = useState([]);
-  const chatEndRef = useRef(null);  // Reference to the chat end for scrolling
-  const [key, setKey] = useState('');
-  const [typins, setTypings] = useState([]);
+  const chatEndRef = useRef(null);
+  const [isUserActive, setIsUserActive] = useState(true);
 
-  const handleKeyDown = (event) => {
-    setKey("Typing"); // Set the key when pressed
-
-    // Reset the displayed key after 0.3 seconds
-    setTimeout(() => {
-      setKey('');
-    }, 3000);
-  };
+  if (!isUserActive == false) {
+    document.title = "LunaChat home page";
+  }
 
   useEffect(() => {
-    // Listen for new messages from the server
     socket.on('message', (data) => {
       setChat((prevChat) => {
-        // Only add new messages if they're not already in the chat
         if (!prevChat.some(msg => msg.message === data.message && msg.user === data.user)) {
-          return [...prevChat, data];  // Append new message if it's not a duplicate
+          return [...prevChat, data];
         }
-        return prevChat;  // Return existing chat if message is a duplicate
+        return [...prevChat, data];
       });
     });
-
-    socket.on('typing', (data) => {
-        setTypings(data); // Update state with the received object
-      });
-
   }, []);
-  if(!message.length == 0){
-    socket.emit('typing', {
-        indicate: key,
-        user:username
-      });
-  }
-    
-  // Auto-scroll to the bottom every time the chat changes
+
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsUserActive(!document.hidden);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    if (isUserActive === false) {
+      document.title = "(1) New Message";
+    } else if (isUserActive === true) {
+      document.title = "LunaChat home page";
+    }
+
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [chat]);
 
   const sendMessage = (e) => {
     e.preventDefault();
-    if (message.length > 0) {
+    if (message.length >= 0) {
       socket.emit('message', {
         message: message,
         user: username,
       });
-      setMessage(''); // Clear input after sending
+      setMessage('');
     }
   };
 
   return (
-    <div className="App">
-      <div className="chat">
-        {chat.map((msg, idx) => (
-          <div
-            key={idx}
-            className={msg.user === username ? "my-message" : "other-message"}
-          >
-            {msg.message}
-          </div>
-        ))}
-        <div ref={chatEndRef} /> {/* This will be used to scroll to the bottom */}
+    <div className="chat-container">
+      <div className="chat-header">
       </div>
-      <header className="App-header">
-        <form onSubmit={sendMessage}>
-          <input
+      <div className="chat-body">
+        <div className="chat">
+          {chat.map((msg, idx) => (
+            <div
+              key={idx}
+              className={msg.user === username ? "my-message" : "other-message"}
+            >
+              {msg.message}
+            </div>
+          ))}
+          <div ref={chatEndRef}></div>
+        </div>
+      </div>
+      <div className="chat-footer">
+        <form onSubmit={sendMessage} className="chat-form">
+          <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Enter your message"
-            onKeyDown={handleKeyDown}
-          />
-          <button type="submit">Send</button>
-        <div>
-        </div>
-        <div 
-        className={typins.user === username ? "mytype":"othertype"}
-        >
-        <p>
-        {typins.indicate}
-        </p>
-        </div>
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(e);
+              }
+            }}
+            placeholder="Type your message..."
+            className="chat-input"
+          ></textarea>
+          <button type="submit" className="chat-send-btn">Send</button>
         </form>
-      </header>
+      </div>
     </div>
   );
 }
