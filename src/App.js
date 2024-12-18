@@ -1,48 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import io from 'socket.io-client';
+import React, { useState, useEffect } from 'react';
+import Login from './components/Login';
+import ChatPage from './components/Chat';
+import Cookies from 'js-cookie';
 
-const socket = io('https://testprosses.onrender.com');
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState('');
 
-function App() {
-  const [message, setMessage] = useState('');
-  const [chat, setChat] = useState([]);
-
+  // Check if the user is already logged in (cookie exists)
   useEffect(() => {
-    socket.on('message', (data) => {
-      setChat([...chat, data]);
-    });
+    const storedName = Cookies.get('lcid');
+    if (storedName) {
+      setIsLoggedIn(true);
+      setUserName(storedName);
+    }
+  }, []);
 
-    return () => {
-      socket.off('message');
-    };
-  }, [chat]);
-
-  const sendMessage = (e) => {
-    e.preventDefault();
-    socket.emit('message', message);
-    setMessage('');
+  const handleLogin = (name) => {
+    setIsLoggedIn(true);
+    setUserName(name);
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Socket.io Chat</h1>
-        <form onSubmit={sendMessage}>
-          <input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Enter your message"
-          />
-          <button type="submit">Send</button>
-        </form>
-        <div className="chat">
-          {chat.map((msg, idx) => (
-            <div key={idx}>{msg}</div>
-          ))}
-        </div>
-      </header>
+    <div>
+      {!isLoggedIn ? (
+        <Login onLogin={handleLogin} />
+      ) : (
+        <ChatPage />
+      )}
     </div>
   );
-}
+};
 
 export default App;
